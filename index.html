@@ -3673,7 +3673,7 @@ function sfRenderSingle(s){
       <div class="sf-bl-row"><div class="up"><b>Watch next</b>${f.watch.map(esc).join(" · ")}</div><div class="down"><b>Not verified</b>${esc(f.caveat)}</div></div>
     </div>`}
     ${fund() ? `<details class="sf-more"><summary>${ic("layers")}Context, ${nq?nq+" DD question"+(nq>1?"s":"")+", ":""}claims and fund relevance</summary>${more}</details>` : `${ddqSec(s)}${claimsInNews(s)}${fundSec}`}
-    <details class="sf-more"${fund()?"":" open"}><summary>${ic("file-text")}Evidence and sources</summary><div class="sf-part">
+    <details class="sf-more"${fund() && S.sfSrcOpen!==s.id?"":" open"}><summary>${ic("file-text")}Evidence and sources</summary><div class="sf-part">
       ${act?`<section><h4>What to watch next</h4><ul class="sf-bul">${f.watch.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></section>`:""}
       <section><h4>What happened</h4><ul class="sf-bul">${f.what.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></section>
       <section><h4>What changed</h4>
@@ -4927,9 +4927,18 @@ function goSignal(id){
   S.sf = Object.assign({topic:"all", kind:"all"}, S.sf||{}, {sel: EV2SF[id] || id, topic:"all", kind:"all"});
   S.signal = id; S.detailOpen = true; S.focus = "all"; S.format = "all"; S.topicFilter = null;
   
+  S.sfSrcOpen = S.sf.sel; // open "Evidence and sources" so the source links are visible right away
   S.drawer = null; S.modal = null;
-  if(route()!=="intelligence"){ location.hash = "intelligence"; } else render();
-  requestAnimationFrame(() => { const el = document.getElementById("sig-"+id); if(el) el.scrollIntoView({block:"nearest", behavior:"smooth"}); const d = document.getElementById("detail"); if(d) d.scrollTop = 0; });
+  // "#intelligence" is no longer a valid route (it fell back to Home); the full analysis lives in the Signal Feed
+  const reveal = () => {
+    const pane = document.getElementById("sfpane"); if(!pane) return;
+    pane.scrollTop = 0;
+    const stacked = getComputedStyle(pane).position !== "sticky";
+    if(stacked){ window.scrollTo({top: Math.max(0, pane.getBoundingClientRect().top + window.scrollY - 80)}); return; }
+    const card = document.getElementById("sf-"+S.sf.sel); if(card) card.scrollIntoView({block:"center"});
+  };
+  if(route()!=="signals"){ location.hash = "signals"; setTimeout(reveal, 80); }
+  else { render(); requestAnimationFrame(reveal); }
 }
 
 let BRIEF_AUDIO={queue:[],index:0,one:false,playing:false};
